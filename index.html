@@ -1,11 +1,11 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ShowTails | Account Exporter V3</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ShowTails | Account Exporter V4 — Offline Media</title><style>
 :root{font:15px system-ui,Segoe UI,sans-serif;background:#f1f5fb;color:#1d3450}*{box-sizing:border-box}body{margin:0}header{background:#163e79;color:#fff;padding:24px}header h1{margin:0;font-size:25px}header p{margin:6px 0 0;color:#d8e6fb}main{max-width:1050px;margin:20px auto;padding:0 15px}.card{background:#fff;border:1px solid #d7e2f1;border-radius:12px;padding:19px;margin-bottom:15px}h2{color:#163e79;font-size:18px;margin:0 0 12px}p{line-height:1.5}.muted{font-size:13px;color:#5a6d84}.warning{background:#fff5df;border-left:4px solid #c98b21;padding:12px;border-radius:6px}.grid{display:flex;gap:14px;flex-wrap:wrap}.grid>label{flex:1;min-width:220px}label{display:block;font-size:13px;font-weight:650;margin:9px 0}input,textarea,select,button{font:inherit}input[type=text],input[type=password],textarea{width:100%;padding:10px;border:1px solid #b8c9de;border-radius:7px}textarea{min-height:120px;font:12px monospace}button{background:#174a8b;color:#fff;border:0;border-radius:7px;padding:11px 15px;cursor:pointer;font-weight:650}button:disabled{opacity:.5;cursor:wait}button.secondary{background:#e9f0fa;color:#174a8b}.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:9px;border-bottom:1px solid #e1e8f3;font-size:13px}th{background:#eaf1fb}#log{white-space:pre-wrap;background:#0e2543;color:#dcecff;border-radius:8px;padding:14px;min-height:100px;max-height:310px;overflow:auto;font:12px/1.5 monospace}#status{font-weight:700;color:#174a8b}progress{width:100%}.hidden{display:none}.check{font-weight:400}code{font-size:12px}small{color:#5a6d84}</style></head><body>
 <header><h1>ShowTails · Full Account Exporter</h1><p>Extract all mapped account records from Glide for ShowTails Desktop migration</p></header><main>
 <section class="card"><h2>1 · Select Account</h2><div class="grid"><label>Glide Users Row ID (optional)<input id="userId" type="text" placeholder="Paste current user's Row ID"></label><label>Customer account email<input id="email" type="text" placeholder="breeder@example.com"></label></div><p class="muted">When a Row ID is supplied, the exporter retrieves the email from the Users table. Otherwise, it searches the Users table by email. For internal use, enter the customer email.</p><p class="warning"><strong>Access notice:</strong> This tool uses the direct Glide API token in browser code, as requested. The Row ID and email are not authentication. Anyone who can access this tool and token may retrieve account data. Use only in an administrator-controlled setting.</p></section>
 <section class="card"><h2>2 · Tables to Export</h2><p class="muted">All nine table mappings are preloaded and selected by default. Additional table definitions can be added below if needed. The exporter cannot discover unknown Glide tables automatically.</p><table><thead><tr><th>Include</th><th>Table</th><th>Mapped fields</th><th>Account match field(s)</th><th>Result</th></tr></thead><tbody id="tables"></tbody></table><details><summary><strong>Add more table mappings (JSON)</strong></summary><p class="muted">Paste a JSON array of table definitions with <code>name</code>, <code>id</code>, <code>columns</code>, and <code>emailFields</code> (logical column names). Optional <code>relationFields</code> identify rabbit-ID references. Example:</p><pre style="overflow:auto;font-size:11px">[{"name":"Litters","id":"native-table-...","columns":{"ownerEmail":{"type":"email-address","name":"..."},"doeId":{"type":"string","name":"..."}},"emailFields":["ownerEmail"],"relationFields":["doeId"]}]</pre><textarea id="extra" placeholder="Paste JSON table definitions here"></textarea><div class="actions"><button id="add" class="secondary">Add / Replace Table Definitions</button><span id="addStatus" class="muted"></span></div></details></section>
-<section class="card"><h2>3 · Export Settings</h2><label class="check"><input type="checkbox" id="secondary" checked> Include records matching secondary-owner email fields</label><label class="check"><input type="checkbox" id="related" checked> Include additional Rabbits table ancestors referenced by owned rabbits (for pedigree reconstruction)</label><p class="muted">Exports are compressed and encrypted automatically into a password-free <code>.showtails</code> file. Image and attachment URLs are preserved; actual media bytes are not downloaded in this test version. Keep this internal administrator tool private.</p><div class="actions"><button id="run">Export Account</button><span id="status">Ready</span></div><p><progress id="progress" value="0" max="4"></progress></p></section>
+<section class="card"><h2>3 · Export Settings</h2><label class="check"><input type="checkbox" id="secondary" checked> Include records matching secondary-owner email fields</label><label class="check"><input type="checkbox" id="related" checked> Include additional Rabbits table ancestors referenced by owned rabbits (for pedigree reconstruction)</label><label class="check"><input type="checkbox" id="media" checked> Download and embed image files for offline use (required for complete account migration)</label><p class="muted">Exports are compressed and encrypted automatically into a password-free <code>.showtails</code> file. Image files are downloaded and encrypted inside the .showtails package. Any missing or blocked image is reported; do not deliver an incomplete export. Keep this internal administrator tool private.</p><div class="actions"><button id="run">Export Account</button><span id="status">Ready</span></div><p><progress id="progress" value="0" max="4"></progress></p></section>
 <section class="card"><h2>Extraction Log</h2><div id="log">Waiting to start.</div></section>
-<section class="card"><h2>Next step</h2><p>Import the downloaded <code>showtails_account_*.showtails</code> file into the matching ShowTails Desktop importer once implemented. It includes a table manifest, mapped column definitions, matching rows, relationship warnings, and source Row IDs for building the SQLite import. Check the warnings before considering the export complete.</p></section>
+<section class="card"><h2>Next step</h2><p>Import the downloaded <code>showtails_account_*.showtails</code> file into the matching ShowTails Desktop importer once implemented. It includes table data, media attachments, matching rows, relationship warnings, and source Row IDs. The Desktop importer must support the mediaAttachments field to restore local photos. Check the warnings before considering the export complete.</p></section>
 </main><script type="module">
 import * as glide from 'https://esm.sh/@glideapps/tables';
 const APP='8lcj30iX3DO7vjRtX1XK', TOKEN='49dd5a59-6f0f-475f-9367-84b23c65d690';
@@ -41,6 +41,68 @@ async function encryptPackage(bytes){
   packed.set(header,0);packed.set(nonce,header.length);packed.set(encrypted,header.length+nonce.length);
   return new Blob([packed],{type:'application/octet-stream'});
 }
+// Media attachments are stored inside the same encrypted, compressed account JSON.
+// Keep original URLs in rows for compatibility; attachments identify their precise source cell.
+function mediaUrls(value){
+  if(typeof value==='string')return value.trim()?[value.trim()]:[];
+  if(Array.isArray(value))return value.flatMap(mediaUrls);
+  if(value&&typeof value==='object'){
+    for(const key of ['url','uri','src','image','value'])if(typeof value[key]==='string')return mediaUrls(value[key]);
+  }
+  return [];
+}
+function base64FromBytes(bytes){
+  let parts=[];const chunk=0x6000;
+  for(let i=0;i<bytes.length;i+=chunk){let str='';for(const b of bytes.subarray(i,i+chunk))str+=String.fromCharCode(b);parts.push(str);}
+  return parts.map(x=>btoa(x)).join('');
+}
+function mediaMime(bytes,reported){
+  if(bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff)return 'image/jpeg';
+  if(bytes[0]===0x89&&bytes[1]===0x50&&bytes[2]===0x4e&&bytes[3]===0x47)return 'image/png';
+  if(bytes[0]===0x47&&bytes[1]===0x49&&bytes[2]===0x46)return 'image/gif';
+  if(bytes[0]===0x52&&bytes[1]===0x49&&bytes[2]===0x46&&bytes[3]===0x46&&String.fromCharCode(...bytes.slice(8,12))==='WEBP')return 'image/webp';
+  if(bytes[0]===0x42&&bytes[1]===0x4d)return 'image/bmp';
+  return reported?.split(';')[0]?.trim()||'application/octet-stream';
+}
+async function collectMedia(out,warnings,errors){
+  const attachments=[],seen=new Map(),MAX_IMAGE=30*1024*1024;
+  let total=0,failed=0;
+  for(const table of out){
+    const mediaFields=Object.entries(table.columns).filter(([,v])=>['image-uri','file-uri'].includes(v.type)).map(([k])=>k);
+    for(let rowIndex=0;rowIndex<table.rows.length;rowIndex++){
+      const row=table.rows[rowIndex];
+      for(const field of mediaFields){
+        const urls=mediaUrls(row[field]);
+        for(let urlIndex=0;urlIndex<urls.length;urlIndex++){
+          const url=urls[urlIndex];
+          const target={tableName:table.tableName,tableId:table.tableId,rowId:row.$rowID||null,rowIndex,field,urlIndex,url};
+          try{
+            const parsed=new URL(url);if(!['https:','http:'].includes(parsed.protocol))throw Error('Unsupported URL protocol');
+            let attachmentId=seen.get(url);
+            if(attachmentId===undefined){
+              const response=await fetch(url,{mode:'cors',credentials:'omit',redirect:'follow'});
+              if(!response.ok)throw Error('HTTP '+response.status);
+              const length=Number(response.headers.get('content-length')||0);
+              if(length>MAX_IMAGE)throw Error('Image exceeds 30 MB limit');
+              const bytes=new Uint8Array(await response.arrayBuffer());
+              if(!bytes.length||bytes.length>MAX_IMAGE)throw Error('Empty image or exceeds 30 MB limit');
+              const mime=mediaMime(bytes,response.headers.get('content-type'));
+              if(!mime.startsWith('image/'))throw Error('Downloaded content is not an image ('+mime+')');
+              attachmentId='media-'+(attachments.length+1);
+              attachments.push({id:attachmentId,url,mimeType:mime,byteLength:bytes.length,base64:base64FromBytes(bytes),references:[]});
+              seen.set(url,attachmentId);total+=bytes.length;
+              log('Media downloaded: '+table.tableName+' / '+field+' ('+(bytes.length/1024).toFixed(0)+' KB)');
+            }
+            attachments.find(x=>x.id===attachmentId).references.push(target);
+          }catch(e){failed++;const detail=table.tableName+' row '+(row.$rowID||rowIndex)+' '+field+': '+e.message;warnings.push('Media download failed: '+detail);log('MEDIA ERROR '+detail);}
+        }
+      }
+    }
+  }
+  log('Media: '+attachments.length+' unique images, '+(total/1024/1024).toFixed(2)+' MB, '+failed+' failures.');
+  if(failed)errors.push(failed+' media files could not be downloaded. Export is incomplete. Check CORS, permissions and URL validity.');
+  return attachments;
+}
 async function gzip(s){const stream=new Blob([s],{type:'application/json'}).stream().pipeThrough(new CompressionStream('gzip'));return new Blob([await new Response(stream).arrayBuffer()],{type:'application/gzip'});}
 $('run').onclick=async()=>{const chosen=[...document.querySelectorAll('.include:checked')].map(x=>registry[Number(x.dataset.i)]);if(!chosen.length){alert('Select at least one table.');return;}const id=str($('userId').value),manualEmail=lower($('email').value);if(!id&&!manualEmail){alert('Enter a Users Row ID or account email.');return;}const btn=$('run');btn.disabled=true;$('log').textContent='';$('status').textContent='Resolving account…';$('progress').value=0;$('progress').max=chosen.length+1;const warnings=[],errors=[],out=[];try{
 const usersDef=registry.find(t=>t.name==='Users');if(!usersDef)throw Error('Users table definition is required.');const userResponse=await getTable(usersDef);if(userResponse.pagination)warnings.push('Users table may have additional pages.');let account;if(id){account=userResponse.data.find(r=>r.$rowID===id);if(!account)throw Error('Users Row ID not found.');}else{account=userResponse.data.find(r=>lower(r.email)===manualEmail);if(!account)throw Error('No user matched the email.');}const email=lower(account.email);if(!email)throw Error('Selected Users record has no email.');if(id&&manualEmail&&email!==manualEmail)throw Error('The supplied email does not match the selected Users Row ID.');log('Account resolved: '+email);$('progress').value=1;
@@ -49,7 +111,7 @@ const result={tableName:t.name,tableId:t.id,columns:t.columns,emailFields:fields
 }catch(e){errors.push(`${t.name}: ${e.message}`);$('res'+registry.indexOf(t)).textContent='ERROR';log('ERROR '+t.name+': '+e.message);}$('progress').value=i+2;}
 if($('related').checked&&rabbitRows.length&&rabbitDefinition&&chosenIds.has(rabbitDefinition.id)){const target=out.find(x=>x.tableId===rabbitDefinition.id);const index=new Map();for(const r of rabbitRows){if(r.$rowID)index.set(r.$rowID,r);if(str(r.donTUse))index.set(str(r.donTUse),r);}const seen=new Set(target.rows.map(r=>r.$rowID));const queue=[...target.rows];let added=0;while(queue.length){const r=queue.shift();for(const k of ['sireId','damId']){const ref=str(r[k]);if(!ref)continue;const parent=index.get(ref);if(!parent){warnings.push(`Missing ancestor ${ref} referenced by ${r.$rowID||'unknown rabbit'}`);continue;}if(seen.has(parent.$rowID))continue;seen.add(parent.$rowID);target.rows.push({...parent,_exportReason:'referenced_ancestor'});queue.push(parent);added++;}}target.matchedRows=target.rows.length;log(`Pedigree references: added ${added} ancestors beyond direct email matches.`);}
 for(const t of out){if(t.tableName==='Rabbits')continue;const fields=t.relationFields||[];if(fields.length&&rabbitRows.length){const ids=new Set(out.find(x=>x.tableName==='Rabbits')?.rows.flatMap(r=>[str(r.$rowID),str(r.donTUse)])||[]);let dangling=0;for(const r of t.rows)for(const k of fields)if(str(r[k])&&!ids.has(str(r[k])))dangling++;if(dangling)warnings.push(`${t.tableName}: ${dangling} rabbit references do not resolve within the exported Rabbits records.`);}}
-const payload={format:'showtails-account-export',version:2,packageFormat:'STACCT01',compression:'gzip',encryption:'AES-256-GCM',appId:APP,exportedAt:new Date().toISOString(),account:{userRowId:account.$rowID,email},scope:'email-matched records in explicitly registered tables, plus referenced rabbit ancestors when enabled',tables:out,manifest:out.map(t=>({name:t.tableName,id:t.tableId,mappedFields:Object.keys(t.columns).length,rows:t.rows.length})),warnings:[...new Set(warnings)],errors,complete:errors.length===0&&warnings.length===0,limitations:['Only registered tables and mapped fields are exported','Unknown tables and records without account email cannot be discovered automatically','Media files are URL references, not downloaded bytes','Related records in other tables without email matching may be omitted']};const json=JSON.stringify(payload);if(typeof CompressionStream==='undefined')throw Error('CompressionStream is required for the .showtails package; use a modern browser.');const compressed=await gzip(json);const blob=await encryptPackage(await compressed.arrayBuffer());const stamp=new Date().toISOString().replace(/[:.]/g,'-');download(blob,`showtails_account_${stamp}.showtails`);$('status').textContent=`Downloaded ${out.length} tables · ${errors.length} errors · ${payload.warnings.length} warnings`;log(`Downloaded ${(blob.size/1024/1024).toFixed(2)} MB. Check warnings before importing.`);
+$('status').textContent='Downloading account photos…';const mediaAttachments=$('media').checked?await collectMedia(out,warnings,errors):[];if(!$('media').checked)warnings.push('Media embedding was disabled; offline photographs will not transfer.');const payload={format:'showtails-account-export',version:3,packageFormat:'STACCT01',compression:'gzip',encryption:'AES-256-GCM',appId:APP,exportedAt:new Date().toISOString(),account:{userRowId:account.$rowID,email},scope:'email-matched records in explicitly registered tables, plus referenced rabbit ancestors when enabled',mediaAttachments,mediaFormat:'base64-image-bytes-v1',tables:out,manifest:out.map(t=>({name:t.tableName,id:t.tableId,mappedFields:Object.keys(t.columns).length,rows:t.rows.length})),warnings:[...new Set(warnings)],errors,complete:errors.length===0&&warnings.length===0,limitations:['Only registered tables and mapped fields are exported','Unknown tables and records without account email cannot be discovered automatically','Media attachment bytes included when downloadable; any failures are reported in errors and warnings','Related records in other tables without email matching may be omitted']};if(errors.length){$('status').textContent='Export incomplete — '+errors.length+' errors';log('Export stopped: missing records or images. No customer package downloaded.');return;}const json=JSON.stringify(payload);if(typeof CompressionStream==='undefined')throw Error('CompressionStream is required for the .showtails package; use a modern browser.');const compressed=await gzip(json);const blob=await encryptPackage(await compressed.arrayBuffer());const stamp=new Date().toISOString().replace(/[:.]/g,'-');download(blob,`showtails_account_${stamp}.showtails`);$('status').textContent=`Downloaded ${out.length} tables · ${errors.length} errors · ${payload.warnings.length} warnings`;log(`Downloaded ${(blob.size/1024/1024).toFixed(2)} MB. Check warnings before importing.`);
 }catch(e){$('status').textContent='Export failed';log('FAILED: '+e.message);console.error(e);}finally{btn.disabled=false;}};
 const params=new URLSearchParams(location.search);$('userId').value=params.get('userId')||'';$('email').value=params.get('email')||'';
 </script></body></html>
